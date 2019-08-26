@@ -3,18 +3,19 @@ import numpy as np
 import glob
 import pytesseract
 
-plates = glob.glob("plates\\*.png")
-processed = glob.glob("processed\\*.png")
-resized = glob.glob("resized\\*.png")
-bordered = glob.glob("borders\\*.png")
+plates = glob.glob("plates/*.png")
+processed = glob.glob("processed/*.png")
+resized = glob.glob("resized/*.png")
+bordered = glob.glob("borders/*.png")
 
 
 def adaptiveThreshold(plates):
     for i, plate in enumerate(plates):
+        print(i)
         img = cv2.imread(plate)
 
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        cv2.imshow('gray', gray)
+        #cv2.imshow('gray', gray)
 
         ret, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
         # cv2.imshow('thresh', thresh)
@@ -23,8 +24,8 @@ def adaptiveThreshold(plates):
         # cv2.imshow('threshMean', threshMean)
 
         threshGauss = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 51, 27)
-        cv2.imshow('threshGauss', threshGauss)
-        cv2.imwrite("processed\\plate{}.png".format(i), threshGauss)
+        #cv2.imshow('threshGauss', threshGauss)
+        cv2.imwrite("processed/plate{}.png".format(i), threshGauss)
 
         cv2.waitKey(0)
 
@@ -38,7 +39,7 @@ def resize(processed):
 
         resizedCubic = cv2.resize(image, dim, interpolation=cv2.INTER_CUBIC)
 
-        cv2.imwrite("resized\\plate{}.png".format(i), resizedCubic)
+        cv2.imwrite("resized/plate{}.png".format(i), resizedCubic)
 
 
 def addBorder(resized):
@@ -49,13 +50,14 @@ def addBorder(resized):
         border = cv2.copyMakeBorder(image, top=bordersize, bottom=bordersize, left=bordersize, right=bordersize,
                                     borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255])
 
-        cv2.imwrite("borders\\plate{}.png".format(i), border)
+        cv2.imwrite("borders/plate{}.png".format(i), border)
 
 
 def cleanOCR(borders):
     detectedOCR = []
 
     for i, image in enumerate(borders):
+        print('ocr',i)
         image = cv2.imread(image)
 
         edges = cv2.Canny(image, 50, 150, apertureSize=3)
@@ -76,8 +78,9 @@ def cleanOCR(borders):
 
         # OCR
         config = '-l eng --oem 1 --psm 3'
+        print('working')
         text = pytesseract.image_to_string(gray, config=config)
-
+        print('working 1')
         validChars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
                       'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
@@ -88,11 +91,11 @@ def cleanOCR(borders):
                 cleanText.append(char)
 
         plate = ''.join(cleanText)
-        # print(plate)
+        print('plate', plate)
 
         detectedOCR.append(plate)
 
-        # cv2.imshow('img', gray)
+        cv2.imwrite('img.jpeg', gray)
         # cv2.waitKey(0)
 
     return detectedOCR
